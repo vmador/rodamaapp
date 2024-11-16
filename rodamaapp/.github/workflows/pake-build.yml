@@ -36,52 +36,28 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y libgtk-3-dev webkit2gtk-4.0 libayatana-appindicator3-dev librsvg2-dev
 
-      - name: Install Pake
+      - name: Download and Build Nativefier
         run: |
-          # Clone repository
-          git clone https://github.com/tw93/Pake.git
-          cd Pake
-          cd src-tauri
+          npm install -g @nativefier/nativefier
           
-          # Show current Cargo.toml
-          echo "Current Cargo.toml:"
-          cat Cargo.toml
-          
-          # Remove the oauth dependency using perl (more reliable than sed)
-          perl -i -ne 'print unless /tauri-plugin-oauth/' Cargo.toml
-          
-          # Show modified Cargo.toml
-          echo "Modified Cargo.toml:"
-          cat Cargo.toml
-          
-          # Clean any previous builds
-          cargo clean
-          
-          # Update dependencies
-          cargo update
-          
-          # Build the project
-          cargo build --release --verbose
-          
-          # Install binary
-          sudo cp target/release/pake /usr/local/bin/ || cp target/release/pake ~/.cargo/bin/
-        shell: bash
-
-      - name: Build with Pake
-        run: |
-          pake ${{ github.event.client_payload.url }} \
-          --name "${{ github.event.client_payload.name }}" \
-          --height 800 \
-          --width 1280
+          if [ "${{ matrix.os }}" = "windows-latest" ]; then
+            nativefier "${{ github.event.client_payload.url }}" --name "${{ github.event.client_payload.name }}" --platform windows
+          elif [ "${{ matrix.os }}" = "macos-latest" ]; then
+            nativefier "${{ github.event.client_payload.url }}" --name "${{ github.event.client_payload.name }}" --platform mac
+          else
+            nativefier "${{ github.event.client_payload.url }}" --name "${{ github.event.client_payload.name }}" --platform linux
+          fi
 
       - name: Package Apps
         run: |
           if [ "${{ matrix.os }}" = "windows-latest" ]; then
-            Compress-Archive -Path "*.exe" -DestinationPath "${{ github.event.client_payload.name }}-windows.zip"
+            Compress-Archive -Path "${{ github.event.client_payload.name }}-win32-x64" -DestinationPath "${{ github.event.client_payload.name }}-windows.zip"
           elif [ "${{ matrix.os }}" = "macos-latest" ]; then
-            zip -r "${{ github.event.client_payload.name }}-macos.zip" *.app
+            cd "${{ github.event.client_payload.name }}-darwin-x64"
+            zip -r "../${{ github.event.client_payload.name }}-macos.zip" "${{ github.event.client_payload.name }}.app"
           else
-            zip -r "${{ github.event.client_payload.name }}-linux.zip" *.AppImage
+            cd "${{ github.event.client_payload.name }}-linux-x64"
+            zip -r "../${{ github.event.client_payload.name }}-linux.zip" .
           fi
         shell: bash
 
