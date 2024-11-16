@@ -44,23 +44,41 @@ jobs:
           cd Pake
           # Install dependencies
           npm install
-          # Build Tauri app
           cd src-tauri
-          # Modificar Cargo.toml
-          sed -i 's/tauri-plugin-oauth.*$//' Cargo.toml
+          
+          # Mostrar contenido original del Cargo.toml
+          echo "Original Cargo.toml:"
+          cat Cargo.toml
+          
+          # Crear nuevo Cargo.toml sin la dependencia oauth
+          perl -ne 'print unless /tauri-plugin-oauth/' Cargo.toml > Cargo.toml.new
+          mv Cargo.toml.new Cargo.toml
+          
+          # Mostrar contenido modificado
+          echo "Modified Cargo.toml:"
+          cat Cargo.toml
+          
           # Build
           cargo build --release
-          # Move binary
+          
+          # Move binary to path
           mkdir -p ~/.cargo/bin
-          cp target/release/app ~/.cargo/bin/pake
+          if [ "${{ matrix.os }}" = "windows-latest" ]; then
+            cp target/release/app.exe ~/.cargo/bin/pake.exe
+          else
+            cp target/release/app ~/.cargo/bin/pake
+          fi
+          chmod +x ~/.cargo/bin/pake || true
         shell: bash
 
       - name: Build with Pake
         run: |
-          ~/.cargo/bin/pake ${{ github.event.client_payload.url }} \
+          export PATH="$HOME/.cargo/bin:$PATH"
+          pake ${{ github.event.client_payload.url }} \
           --name "${{ github.event.client_payload.name }}" \
           --height 800 \
           --width 1280
+        shell: bash
 
       - name: Package Apps
         run: |
