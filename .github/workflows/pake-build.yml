@@ -84,4 +84,8 @@ jobs:
             \"status\": \"${{ job.status == 'success' && 'completed' || 'failed' }}\",
             \"download_url\": \"${{ github.server_url }}/${{ github.repository }}/releases/tag/release-${{ github.sha }}\"
           }" \
+<<<<<<< HEAD
           -d "id=eq.${{ github.event.client_payload.build_id }}"
+=======
+          -d "id=eq.${{ github.event.client_payload.build_id }}"
+>>>>>>> a1b7e3c72bc556efc7a2fa98e9f32936d5a7f7ee
