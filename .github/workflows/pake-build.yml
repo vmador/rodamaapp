@@ -49,9 +49,32 @@ jobs:
           # Prepare Tauri build
           cd src-tauri
           
-          # Update dependencies versions in Cargo.toml
-          perl -i -pe 's/(tauri.*=.*)"[^"]+"/\1"1.2.4"/g' Cargo.toml
-          perl -i -pe 's/(tauri-build.*=.*)"[^"]+"/\1"1.2.1"/g' Cargo.toml
+          # Create new Cargo.toml with correct dependencies
+          cat > Cargo.toml << 'EOL'
+          [package]
+          name = "app"
+          version = "0.1.0"
+          description = "A Tauri App"
+          authors = ["you"]
+          license = ""
+          repository = ""
+          edition = "2021"
+          rust-version = "1.57"
+
+          [build-dependencies]
+          tauri-build = { version = "1.2.1", features = [] }
+
+          [dependencies]
+          serde_json = "1.0"
+          serde = { version = "1.0", features = ["derive"] }
+          tauri = { version = "1.2.4", features = ["api-all", "system-tray"] }
+          tauri-plugin-window-state = { git = "https://github.com/tauri-apps/plugins-workspace", branch = "v1" }
+          tokio = { version = "1", features = ["full"] }
+
+          [features]
+          default = ["custom-protocol"]
+          custom-protocol = ["tauri/custom-protocol"]
+          EOL
           
           # Build the application
           cargo build --release
