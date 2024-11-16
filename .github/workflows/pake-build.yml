@@ -14,7 +14,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [macos-latest, windows-latest, ubuntu-latest]
+        os: [macos-latest]
 
     steps:
       - uses: actions/checkout@v3
@@ -29,27 +29,22 @@ jobs:
         with:
           toolchain: stable
           override: true
-          components: rustfmt, clippy
 
-      - name: Install Dependencies (Ubuntu)
-        if: matrix.os == 'ubuntu-latest'
+      - name: Install Dependencies (macOS)
         run: |
-          sudo apt-get update
-          sudo apt-get install -y libgtk-3-dev webkit2gtk-4.0 libayatana-appindicator3-dev librsvg2-dev
+          brew install node
+          brew install rust
+          cargo install tauri-cli
 
-      - name: Build Pake App
+      - name: Clone Pake
         run: |
-          # Clone specific version
-          git clone --depth 1 --branch V0.9.5 https://github.com/tw93/Pake.git
+          git clone --branch V0.9.5 https://github.com/tw93/Pake.git
           cd Pake
-          
-          # Install dependencies
           npm install
-          
-          # Prepare Tauri build
-          cd src-tauri
-          
-          # Create new Cargo.toml with correct dependencies
+
+      - name: Modify Cargo.toml
+        run: |
+          cd Pake/src-tauri
           cat > Cargo.toml << 'EOL'
           [package]
           name = "app"
@@ -62,54 +57,46 @@ jobs:
           rust-version = "1.57"
 
           [build-dependencies]
-          tauri-build = { version = "1.2.1", features = [] }
+          tauri-build = { version = "1.2" }
 
           [dependencies]
           serde_json = "1.0"
           serde = { version = "1.0", features = ["derive"] }
-          tauri = { version = "1.2.4", features = ["api-all", "system-tray"] }
-          tauri-plugin-window-state = { git = "https://github.com/tauri-apps/plugins-workspace", branch = "v1" }
-          tokio = { version = "1", features = ["full"] }
+          tauri = { version = "1.2", features = ["api-all"] }
 
           [features]
           default = ["custom-protocol"]
           custom-protocol = ["tauri/custom-protocol"]
           EOL
-          
-          # Build the application
+
+      - name: Build App
+        run: |
+          cd Pake/src-tauri
           cargo build --release
 
-      - name: Package Apps
+      - name: Package App
         run: |
           cd Pake/src-tauri/target/release
-          if [ "${{ matrix.os }}" = "windows-latest" ]; then
-            Compress-Archive -Path "app.exe" -DestinationPath "../../../${{ github.event.client_payload.name }}-windows.zip"
-          elif [ "${{ matrix.os }}" = "macos-latest" ]; then
-            cd bundle/macos
-            zip -r "../../../../${{ github.event.client_payload.name }}-macos.zip" *.app
-          else
-            cd bundle/appimage
-            zip -r "../../../../${{ github.event.client_payload.name }}-linux.zip" *.AppImage
-          fi
-        shell: bash
+          zip -r "../../../${{ github.event.client_payload.name }}-macos.zip" *.app || zip -r "../../../${{ github.event.client_payload.name }}-macos.zip" app
 
       - name: Upload Artifact
         uses: actions/upload-artifact@v3
         with:
-          name: ${{ github.event.client_payload.name }}-${{ matrix.os }}
-          path: Pake/${{ github.event.client_payload.name }}-*.zip
+          name: ${{ github.event.client_payload.name }}-macos
+          path: Pake/${{ github.event.client_payload.name }}-macos.zip
 
       - name: Create Release
         uses: softprops/action-gh-release@v1
         if: success()
         with:
-          files: Pake/${{ github.event.client_payload.name }}-*.zip
+          files: Pake/${{ github.event.client_payload.name }}-macos.zip
           name: ${{ github.event.client_payload.name }}
           tag_name: release-${{ github.sha }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Update Supabase Status
+        if: always()
         run: |
           curl -X PATCH "${{ env.SUPABASE_URL }}/rest/v1/pake_apps" \
           -H "apikey: ${{ env.SUPABASE_ANON_KEY }}" \
