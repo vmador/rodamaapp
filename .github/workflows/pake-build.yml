@@ -37,56 +37,76 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y libgtk-3-dev webkit2gtk-4.0 libayatana-appindicator3-dev librsvg2-dev
 
-      - name: Install Pake
+      - name: Build Pake App
         run: |
-          # Clone and build from source
+          # Clone and prepare
           git clone https://github.com/tw93/Pake.git
           cd Pake
+          
           # Install dependencies
           npm install
+          
+          # Modify Tauri configuration for the target URL
           cd src-tauri
           
-          # Remove oauth from Cargo.toml
-          perl -ne 'print unless /tauri-plugin-oauth/' Cargo.toml > Cargo.toml.new
-          mv Cargo.toml.new Cargo.toml
+          # Update tauri.conf.json
+          cat > tauri.conf.json << EOF
+          {
+            "build": {
+              "beforeBuildCommand": "",
+              "beforeDevCommand": "",
+              "devPath": "../src",
+              "distDir": "../src"
+            },
+            "package": {
+              "productName": "${{ github.event.client_payload.name }}",
+              "version": "1.0.0"
+            },
+            "tauri": {
+              "allowlist": {
+                "all": true
+              },
+              "bundle": {
+                "active": true,
+                "category": "DeveloperTool",
+                "identifier": "com.tauri.build",
+                "targets": ["app", "dmg", "deb", "msi"]
+              },
+              "security": {
+                "csp": "default-src 'self' data: filesystem: ws: http: https: 'unsafe-eval' 'unsafe-inline'"
+              },
+              "windows": [
+                {
+                  "fullscreen": false,
+                  "height": 800,
+                  "resizable": true,
+                  "title": "${{ github.event.client_payload.name }}",
+                  "width": 1280,
+                  "url": "${{ github.event.client_payload.url }}"
+                }
+              ]
+            }
+          }
+          EOF
           
-          # Remove oauth from main.rs
+          # Remove oauth plugin
+          perl -i -ne 'print unless /tauri-plugin-oauth/' Cargo.toml
           perl -i -ne 'print unless /tauri_plugin_oauth::init()/' src/main.rs
-          
-          # Show modified files
-          echo "Modified main.rs:"
-          cat src/main.rs
           
           # Build
           cargo build --release
-          
-          # Move binary to path
-          mkdir -p ~/.cargo/bin
-          if [ "${{ matrix.os }}" = "windows-latest" ]; then
-            cp target/release/app.exe ~/.cargo/bin/pake.exe
-          else
-            cp target/release/app ~/.cargo/bin/pake
-          fi
-          chmod +x ~/.cargo/bin/pake || true
-        shell: bash
-
-      - name: Build with Pake
-        run: |
-          export PATH="$HOME/.cargo/bin:$PATH"
-          pake ${{ github.event.client_payload.url }} \
-          --name "${{ github.event.client_payload.name }}" \
-          --height 800 \
-          --width 1280
-        shell: bash
 
       - name: Package Apps
         run: |
+          cd Pake/src-tauri/target/release
           if [ "${{ matrix.os }}" = "windows-latest" ]; then
-            Compress-Archive -Path "*.exe" -DestinationPath "${{ github.event.client_payload.name }}-windows.zip"
+            Compress-Archive -Path "app.exe" -DestinationPath "../../../${{ github.event.client_payload.name }}-windows.zip"
           elif [ "${{ matrix.os }}" = "macos-latest" ]; then
-            zip -r "${{ github.event.client_payload.name }}-macos.zip" *.app
+            cd bundle/macos
+            zip -r "../../../../${{ github.event.client_payload.name }}-macos.zip" *.app
           else
-            zip -r "${{ github.event.client_payload.name }}-linux.zip" *.AppImage
+            cd bundle/appimage
+            zip -r "../../../../${{ github.event.client_payload.name }}-linux.zip" *.AppImage
           fi
         shell: bash
 
@@ -94,13 +114,13 @@ jobs:
         uses: actions/upload-artifact@v3
         with:
           name: ${{ github.event.client_payload.name }}-${{ matrix.os }}
-          path: ${{ github.event.client_payload.name }}-*.zip
+          path: Pake/${{ github.event.client_payload.name }}-*.zip
 
       - name: Create Release
         uses: softprops/action-gh-release@v1
         if: success()
         with:
-          files: ${{ github.event.client_payload.name }}-*.zip
+          files: Pake/${{ github.event.client_payload.name }}-*.zip
           name: ${{ github.event.client_payload.name }}
           tag_name: release-${{ github.sha }}
         env:
