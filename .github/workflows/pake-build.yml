@@ -39,61 +39,21 @@ jobs:
 
       - name: Build Pake App
         run: |
-          # Clone and prepare
-          git clone https://github.com/tw93/Pake.git
+          # Clone specific version
+          git clone --depth 1 --branch V0.9.5 https://github.com/tw93/Pake.git
           cd Pake
           
           # Install dependencies
           npm install
           
-          # Modify Tauri configuration for the target URL
+          # Prepare Tauri build
           cd src-tauri
           
-          # Update tauri.conf.json
-          cat > tauri.conf.json << EOF
-          {
-            "build": {
-              "beforeBuildCommand": "",
-              "beforeDevCommand": "",
-              "devPath": "../src",
-              "distDir": "../src"
-            },
-            "package": {
-              "productName": "${{ github.event.client_payload.name }}",
-              "version": "1.0.0"
-            },
-            "tauri": {
-              "allowlist": {
-                "all": true
-              },
-              "bundle": {
-                "active": true,
-                "category": "DeveloperTool",
-                "identifier": "com.tauri.build",
-                "targets": ["app", "dmg", "deb", "msi"]
-              },
-              "security": {
-                "csp": "default-src 'self' data: filesystem: ws: http: https: 'unsafe-eval' 'unsafe-inline'"
-              },
-              "windows": [
-                {
-                  "fullscreen": false,
-                  "height": 800,
-                  "resizable": true,
-                  "title": "${{ github.event.client_payload.name }}",
-                  "width": 1280,
-                  "url": "${{ github.event.client_payload.url }}"
-                }
-              ]
-            }
-          }
-          EOF
+          # Update dependencies versions in Cargo.toml
+          perl -i -pe 's/(tauri.*=.*)"[^"]+"/\1"1.2.4"/g' Cargo.toml
+          perl -i -pe 's/(tauri-build.*=.*)"[^"]+"/\1"1.2.1"/g' Cargo.toml
           
-          # Remove oauth plugin
-          perl -i -ne 'print unless /tauri-plugin-oauth/' Cargo.toml
-          perl -i -ne 'print unless /tauri_plugin_oauth::init()/' src/main.rs
-          
-          # Build
+          # Build the application
           cargo build --release
 
       - name: Package Apps
