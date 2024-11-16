@@ -46,17 +46,16 @@ jobs:
           npm install
           cd src-tauri
           
-          # Mostrar contenido original del Cargo.toml
-          echo "Original Cargo.toml:"
-          cat Cargo.toml
-          
-          # Crear nuevo Cargo.toml sin la dependencia oauth
+          # Remove oauth from Cargo.toml
           perl -ne 'print unless /tauri-plugin-oauth/' Cargo.toml > Cargo.toml.new
           mv Cargo.toml.new Cargo.toml
           
-          # Mostrar contenido modificado
-          echo "Modified Cargo.toml:"
-          cat Cargo.toml
+          # Remove oauth from main.rs
+          perl -i -ne 'print unless /tauri_plugin_oauth::init()/' src/main.rs
+          
+          # Show modified files
+          echo "Modified main.rs:"
+          cat src/main.rs
           
           # Build
           cargo build --release
