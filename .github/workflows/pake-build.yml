@@ -29,6 +29,7 @@ jobs:
         with:
           toolchain: stable
           override: true
+          components: rustfmt, clippy
 
       - name: Install Dependencies (Ubuntu)
         if: matrix.os == 'ubuntu-latest'
@@ -38,28 +39,28 @@ jobs:
 
       - name: Install Pake
         run: |
+          # Clone and build from source
           git clone https://github.com/tw93/Pake.git
-          cd Pake/src-tauri
-          
-          # Remover la dependencia de oauth
-          sed -i 's/^tauri-plugin-oauth.*$//' Cargo.toml
-          
-          # Remover la línea del plugin oauth del main.rs
-          sed -i '/tauri_plugin_oauth::init()/d' src/main.rs
-          
-          # Construir el proyecto
+          cd Pake
+          # Install dependencies
+          npm install
+          # Build Tauri app
+          cd src-tauri
+          # Modificar Cargo.toml
+          sed -i 's/tauri-plugin-oauth.*$//' Cargo.toml
+          # Build
           cargo build --release
-          
-          # Instalar el binario
-          sudo cp target/release/app /usr/local/bin/pake || cp target/release/app ~/.cargo/bin/pake
+          # Move binary
+          mkdir -p ~/.cargo/bin
+          cp target/release/app ~/.cargo/bin/pake
         shell: bash
 
       - name: Build with Pake
         run: |
-          pake ${{ github.event.client_payload.url }} \
-            --name "${{ github.event.client_payload.name }}" \
-            --height 800 \
-            --width 1280
+          ~/.cargo/bin/pake ${{ github.event.client_payload.url }} \
+          --name "${{ github.event.client_payload.name }}" \
+          --height 800 \
+          --width 1280
 
       - name: Package Apps
         run: |
