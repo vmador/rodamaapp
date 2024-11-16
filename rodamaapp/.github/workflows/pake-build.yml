@@ -14,7 +14,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [macos-latest, ubuntu-latest, windows-latest]
+        os: [macos-latest, windows-latest, ubuntu-latest]
 
     steps:
       - uses: actions/checkout@v3
@@ -26,56 +26,31 @@ jobs:
 
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
-        with:
-          targets: ${{ matrix.target }}
 
-      - name: Install dependencies (ubuntu only)
+      - name: Install Dependencies (Ubuntu)
         if: matrix.os == 'ubuntu-latest'
         run: |
           sudo apt-get update
           sudo apt-get install -y libgtk-3-dev webkit2gtk-4.0 libayatana-appindicator3-dev librsvg2-dev
 
-      - name: Clone Pake Repository
-        run: |
-          git clone --depth 1 https://github.com/tw93/Pake.git
-          cd Pake
-          npm install
-        shell: bash
+      - name: Install Pake CLI
+        run: cargo install pake-cli --version "0.2.0"
 
-      - name: Configure Project
+      - name: Build with Pake
         run: |
-          cd Pake/src-tauri
-          cargo update
-          export URL="${{ github.event.client_payload.url }}"
-          export NAME="${{ github.event.client_payload.name }}"
-          sed -i.bak "s|\"productName\": \".*\"|\"productName\": \"$NAME\"|" tauri.conf.json
-          sed -i.bak "s|\"title\": \".*\"|\"title\": \"$NAME\"|" tauri.conf.json
-          cat > ../src/defaults.ts << EOF
-          export const url = "$URL";
-          export const height = 800;
-          export const width = 1280;
-          EOF
-        shell: bash
-
-      - name: Build
-        run: |
-          cd Pake
-          npm run build
-        shell: bash
+          pake ${{ github.event.client_payload.url }} \
+          --name "${{ github.event.client_payload.name }}" \
+          --height 800 \
+          --width 1280
 
       - name: Package Apps
         run: |
-          cd Pake
           if [ "${{ matrix.os }}" = "windows-latest" ]; then
-            cp "src-tauri/target/release/${{ github.event.client_payload.name }}.exe" "../${{ github.event.client_payload.name }}-windows.exe"
-            cd ..
-            Compress-Archive -Path "${{ github.event.client_payload.name }}-windows.exe" -DestinationPath "${{ github.event.client_payload.name }}-windows.zip"
+            Compress-Archive -Path "*.exe" -DestinationPath "${{ github.event.client_payload.name }}-windows.zip"
           elif [ "${{ matrix.os }}" = "macos-latest" ]; then
-            cd src-tauri/target/release/bundle/macos
-            zip -r "../../../../../${{ github.event.client_payload.name }}-macos.zip" *.app
+            zip -r "${{ github.event.client_payload.name }}-macos.zip" *.app
           else
-            cd src-tauri/target/release/bundle/appimage
-            zip -r "../../../../../${{ github.event.client_payload.name }}-linux.zip" *.AppImage
+            zip -r "${{ github.event.client_payload.name }}-linux.zip" *.AppImage
           fi
         shell: bash
 
@@ -100,4 +75,3 @@ jobs:
           curl -X PATCH "${{ env.SUPABASE_URL }}/rest/v1/pake_apps" \
           -H "apikey: ${{ env.SUPABASE_ANON_KEY }}" \
           -H "Content-Type: application/json" \
-          -d "{\"status\":\"completed\",\"download_url\":\"${{ github.server_url }}/${{ github.repository }}/releases/tag/release-${{ github.sha }}\"}"
