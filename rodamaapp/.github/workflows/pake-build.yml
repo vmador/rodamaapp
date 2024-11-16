@@ -38,31 +38,32 @@ jobs:
 
       - name: Install Pake
         run: |
-          # Clonar el repositorio
+          # Clone repository
           git clone https://github.com/tw93/Pake.git
           cd Pake
-          
-          # Modificar Cargo.toml para remover la dependencia problemática
           cd src-tauri
           
-          # Crear backup del Cargo.toml original
-          cp Cargo.toml Cargo.toml.backup
-          
-          # Mostrar el contenido actual
-          echo "Current Cargo.toml content:"
+          # Show current Cargo.toml
+          echo "Current Cargo.toml:"
           cat Cargo.toml
           
-          # Remover la línea problemática usando sed
-          sed -i '/tauri-plugin-oauth/d' Cargo.toml
+          # Remove the oauth dependency using perl (more reliable than sed)
+          perl -i -ne 'print unless /tauri-plugin-oauth/' Cargo.toml
           
-          # Mostrar el contenido modificado
-          echo "Modified Cargo.toml content:"
+          # Show modified Cargo.toml
+          echo "Modified Cargo.toml:"
           cat Cargo.toml
           
-          # Intentar la construcción
-          cargo build --release
+          # Clean any previous builds
+          cargo clean
           
-          # Copiar el binario
+          # Update dependencies
+          cargo update
+          
+          # Build the project
+          cargo build --release --verbose
+          
+          # Install binary
           sudo cp target/release/pake /usr/local/bin/ || cp target/release/pake ~/.cargo/bin/
         shell: bash
 
