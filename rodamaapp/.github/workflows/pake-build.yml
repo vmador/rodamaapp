@@ -37,13 +37,12 @@ jobs:
         run: |
           git clone https://github.com/tw93/Pake.git
           cd Pake
-          git fetch --all --tags
-          git checkout tags/V0.9.5
+          # Modificar Cargo.toml antes de la instalación
+          sed -i.bak 's|branch = "main"|tag = "v0.1.0"|g' src-tauri/Cargo.toml
+          # Alternativamente, remover la dependencia si no es necesaria
+          sed -i.bak '/tauri-plugin-oauth/d' src-tauri/Cargo.toml
+          # Construir e instalar
           cd src-tauri
-          
-          # Modificar Cargo.toml para usar una versión estable de tauri-plugin-oauth
-          sed -i.bak 's|branch = "main"|branch = "master"|g' Cargo.toml
-          
           cargo build --release
           sudo cp target/release/pake /usr/local/bin/ || cp target/release/pake ~/.cargo/bin/
         shell: bash
