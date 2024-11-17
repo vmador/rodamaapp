@@ -100,18 +100,9 @@ jobs:
           
           cat > tauri.conf.json << 'EOL'
           {
-            "tauri": {
-              "build": {
-                "beforeBuildCommand": "",
-                "beforeDevCommand": ""
-              },
-              "identifier": "com.tauri.${{ github.event.client_payload.name }}",
-              "bundle": {
-                "active": true,
-                "icon": ["icons/icon.png"],
-                "targets": ["app"]
-              }
-            }
+            "version": "0.1.0",
+            "product": "default",
+            "identifier": "com.tauri.${{ github.event.client_payload.name }}"
           }
           EOL
 
@@ -155,3 +146,4 @@ jobs:
             -H 'apikey: ${{ env.SUPABASE_ANON_KEY }}' \
             -H 'Content-Type: application/json' \
             -H 'Prefer: return=minimal' \
+            -d '{"status":"completed","download_url":"${{ github.server_url }}/${{ github.repository }}/releases/tag/release-${{ github.sha }}"}'
