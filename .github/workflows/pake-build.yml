@@ -100,29 +100,43 @@ jobs:
           
           cat > tauri.conf.json << 'EOL'
           {
+            "$schema": "../gen/schemas/tauri.schema.json",
+            "build": {
+              "beforeBuildCommand": "",
+              "beforeDevCommand": "",
+              "devPath": "../src",
+              "distDir": "../src"
+            },
             "identifier": "com.tauri.${{ github.event.client_payload.name }}",
             "productName": "${{ github.event.client_payload.name }}",
             "version": "0.1.0",
-            "distDir": "../src",
-            "windows": [
-              {
-                "title": "${{ github.event.client_payload.name }}",
-                "height": 800,
-                "width": 1280,
-                "resizable": true,
-                "fullscreen": false,
-                "url": "${{ github.event.client_payload.url }}"
-              }
-            ],
-            "security": {
-              "csp": "default-src * 'unsafe-inline' 'unsafe-eval' data: filesystem:"
-            },
+            "publisher": "tauri",
             "bundle": {
               "active": true,
-              "targets": ["dmg", "app"],
-              "icon": ["icons/icon.png"],
+              "category": "DeveloperTool",
+              "copyright": "",
+              "deb": {
+                "depends": []
+              },
+              "icon": [
+                "icons/icon.png"
+              ],
+              "identifier": "com.tauri.${{ github.event.client_payload.name }}",
+              "longDescription": "",
               "macOS": {
-                "minimumSystemVersion": "10.13"
+                "entitlements": null,
+                "exceptionDomain": "",
+                "frameworks": [],
+                "providerShortName": null,
+                "signingIdentity": null
+              },
+              "resources": [],
+              "shortDescription": "",
+              "targets": ["dmg"],
+              "windows": {
+                "certificateThumbprint": null,
+                "digestAlgorithm": "sha256",
+                "timestampUrl": ""
               }
             }
           }
