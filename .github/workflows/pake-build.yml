@@ -100,44 +100,31 @@ jobs:
           
           cat > tauri.conf.json << 'EOL'
           {
-            "$schema": "../gen/schemas/tauri.schema.json",
             "build": {
               "beforeBuildCommand": "",
-              "beforeDevCommand": "",
-              "devPath": "../src",
-              "distDir": "../src"
+              "beforeDevCommand": ""
             },
             "identifier": "com.tauri.${{ github.event.client_payload.name }}",
-            "productName": "${{ github.event.client_payload.name }}",
-            "version": "0.1.0",
-            "publisher": "tauri",
+            "app": {
+              "withGlobalTauri": false,
+              "out": "dist",
+              "security": {
+                "csp": null
+              },
+              "windows": [
+                {
+                  "title": "${{ github.event.client_payload.name }}",
+                  "width": 1280,
+                  "height": 800,
+                  "resizable": true,
+                  "fullscreen": false
+                }
+              ]
+            },
             "bundle": {
               "active": true,
-              "category": "DeveloperTool",
-              "copyright": "",
-              "deb": {
-                "depends": []
-              },
-              "icon": [
-                "icons/icon.png"
-              ],
-              "identifier": "com.tauri.${{ github.event.client_payload.name }}",
-              "longDescription": "",
-              "macOS": {
-                "entitlements": null,
-                "exceptionDomain": "",
-                "frameworks": [],
-                "providerShortName": null,
-                "signingIdentity": null
-              },
-              "resources": [],
-              "shortDescription": "",
-              "targets": ["dmg"],
-              "windows": {
-                "certificateThumbprint": null,
-                "digestAlgorithm": "sha256",
-                "timestampUrl": ""
-              }
+              "icon": ["icons/icon.png"],
+              "targets": "app"
             }
           }
           EOL
