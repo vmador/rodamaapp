@@ -100,42 +100,15 @@ jobs:
           
           cat > tauri.conf.json << 'EOL'
           {
+            "$schema": "https://raw.githubusercontent.com/tauri-apps/tauri/1.0.0/tooling/cli/schema.json",
+            "identifier": "com.tauri.${{ github.event.client_payload.name }}",
+            "productName": "${{ github.event.client_payload.name }}",
+            "version": "1.0.0",
             "build": {
-              "beforeDevCommand": "",
-              "beforeBuildCommand": "",
-              "devPath": "../src",
+              "withGlobalTauri": true,
               "distDir": "../src"
             },
-            "package": {
-              "productName": "${{ github.event.client_payload.name }}",
-              "version": "0.1.0"
-            },
-            "tauri": {
-              "allowlist": {
-                "all": true
-              },
-              "bundle": {
-                "active": true,
-                "targets": ["app", "dmg"],
-                "identifier": "com.tauri.${{ github.event.client_payload.name }}",
-                "icon": [
-                  "icons/icon.png"
-                ],
-                "macOS": {
-                  "minimumSystemVersion": "10.13",
-                  "exceptionDomain": "",
-                  "signingIdentity": null,
-                  "providerShortName": null,
-                  "entitlements": null,
-                  "frameworks": []
-                },
-                "resources": [],
-                "copyright": "",
-                "category": "DeveloperTool"
-              },
-              "security": {
-                "csp": "default-src * 'unsafe-inline' 'unsafe-eval' data: filesystem:"
-              },
+            "app": {
               "windows": [
                 {
                   "fullscreen": false,
@@ -145,7 +118,22 @@ jobs:
                   "width": 1280,
                   "url": "${{ github.event.client_payload.url }}"
                 }
-              ]
+              ],
+              "security": {
+                "csp": "default-src * 'unsafe-inline' 'unsafe-eval' data: filesystem:"
+              }
+            },
+            "bundle": {
+              "active": true,
+              "category": "DeveloperTool",
+              "copyright": "",
+              "targets": ["dmg", "app"],
+              "macOS": {
+                "minimumSystemVersion": "10.13",
+                "frameworks": [],
+                "providerShortName": null,
+                "signingIdentity": null
+              }
             }
           }
           EOL
