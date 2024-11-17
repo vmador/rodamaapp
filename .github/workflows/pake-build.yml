@@ -34,17 +34,21 @@ jobs:
         run: |
           brew install node
           brew install rust
+          brew install imagemagick
+          brew install pkg-config
 
       - name: Clone and Setup
         run: |
-          # First try specific version
           git clone --depth 1 --branch V0.9.5 https://github.com/tw93/Pake.git || git clone https://github.com/tw93/Pake.git
           cd Pake
           npm install
           
-          # Create src directory if it doesn't exist
+          # Create directories
           mkdir -p src
           mkdir -p src-tauri/icons
+          
+          # Create icon file directly
+          echo "iVBORw0KGgoAAAANSUhEUgAAAgAAAAIAAQMAAADOtka5AAAAA1BMVEX///+nxBvIAAAATklEQVR42u3BMQEAAADCoPVPbQ0PoAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAICXAcTgAAG6EHNeAAAAAElFTkSuQmCC" | base64 -d > src-tauri/icons/icon.png
           
           # Create basic HTML file
           cat > src/index.html << 'EOL'
@@ -150,9 +154,6 @@ jobs:
             }
           }
           EOL
-          
-          # Create basic icon
-          convert -size 512x512 xc:white -fill black -gravity center -draw "text 0,0 'Icon'" icons/icon.png
 
       - name: Build App
         run: |
