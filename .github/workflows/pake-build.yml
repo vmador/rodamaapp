@@ -35,15 +35,36 @@ jobs:
           brew install node
           brew install rust
 
-      - name: Clone Pake
+      - name: Clone and Setup
         run: |
-          git clone --depth 1 --branch v2.0.0 https://github.com/tw93/Pake.git
+          # First try specific version
+          git clone --depth 1 --branch V0.9.5 https://github.com/tw93/Pake.git || git clone https://github.com/tw93/Pake.git
           cd Pake
           npm install
+          
+          # Create src directory if it doesn't exist
+          mkdir -p src
+          mkdir -p src-tauri/icons
+          
+          # Create basic HTML file
+          cat > src/index.html << 'EOL'
+          <!DOCTYPE html>
+          <html>
+            <head>
+              <title>${{ github.event.client_payload.name }}</title>
+              <meta http-equiv="refresh" content="0;url=${{ github.event.client_payload.url }}">
+            </head>
+            <body>
+              <h1>Loading...</h1>
+            </body>
+          </html>
+          EOL
 
-      - name: Modify Cargo.toml
+      - name: Configure Build
         run: |
           cd Pake/src-tauri
+          
+          # Update Cargo.toml
           cat > Cargo.toml << 'EOL'
           [package]
           name = "app"
@@ -62,17 +83,13 @@ jobs:
           serde_json = "1.0"
           serde = { version = "1.0", features = ["derive"] }
           tauri = { version = "1.2", features = ["api-all"] }
-          webbrowser = "0.8"
-          wry = "0.24"
 
           [features]
           default = ["custom-protocol"]
           custom-protocol = ["tauri/custom-protocol"]
           EOL
-
-      - name: Create tauri.conf.json
-        run: |
-          cd Pake/src-tauri
+          
+          # Update tauri.conf.json
           cat > tauri.conf.json << 'EOL'
           {
             "build": {
@@ -97,13 +114,9 @@ jobs:
                   "depends": []
                 },
                 "icon": [
-                  "icons/32x32.png",
-                  "icons/128x128.png",
-                  "icons/128x128@2x.png",
-                  "icons/icon.icns",
-                  "icons/icon.ico"
+                  "icons/icon.png"
                 ],
-                "identifier": "com.tauri.dev",
+                "identifier": "com.tauri.build",
                 "longDescription": "",
                 "macOS": {
                   "entitlements": null,
@@ -122,7 +135,7 @@ jobs:
                 }
               },
               "security": {
-                "csp": "default-src 'self' 'unsafe-eval' 'unsafe-inline' data: filesystem: ws: wss: http: https:"
+                "csp": "default-src * 'unsafe-inline' 'unsafe-eval' data: filesystem:"
               },
               "windows": [
                 {
@@ -130,40 +143,20 @@ jobs:
                   "height": 800,
                   "resizable": true,
                   "title": "${{ github.event.client_payload.name }}",
-                  "width": 1280
+                  "width": 1280,
+                  "url": "${{ github.event.client_payload.url }}"
                 }
               ]
             }
           }
           EOL
-
-      - name: Create Source Files
-        run: |
-          cd Pake/src-tauri/src
-          cat > main.rs << 'EOL'
-          #![cfg_attr(all(not(debug_assertions), target_os = "windows"), windows_subsystem = "windows")]
-
-          use tauri::{CustomMenuItem, Menu, MenuItem, Submenu};
-
-          fn main() {
-            let ctx = tauri::generate_context!();
-            tauri::Builder::default()
-              .menu(
-                Menu::new()
-                  .add_submenu(Submenu::new(
-                    "File",
-                    Menu::new().add_native_item(MenuItem::Quit),
-                  ))
-              )
-              .run(ctx)
-              .expect("error while running tauri application");
-          }
-          EOL
+          
+          # Create basic icon
+          convert -size 512x512 xc:white -fill black -gravity center -draw "text 0,0 'Icon'" icons/icon.png
 
       - name: Build App
         run: |
           cd Pake/src-tauri
-          mkdir -p icons
           cargo build --release
 
       - name: Package App
