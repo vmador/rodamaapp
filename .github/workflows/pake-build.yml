@@ -165,11 +165,7 @@ jobs:
       - name: Update Supabase Status
         if: always()
         run: |
-          STATUS="${{ job.status == 'success' && 'completed' || 'failed' }}"
-          DOWNLOAD_URL="${{ job.status == 'success' && format('{0}/{1}/releases/tag/release-{2}', github.server_url, github.repository, github.sha) || '' }}"
-          
-          curl "${{ env.SUPABASE_URL }}/rest/v1/pake_apps" \
-            -H "apikey: ${{ env.SUPABASE_ANON_KEY }}" \
-            -H "Content-Type: application/json" \
-            -H "Prefer: return=minimal" \
-            -X PATCH \
+          curl -X PATCH 'https://cpcvedvqzwkcswdrhvlc.supabase.co/rest/v1/pake_apps' \
+            -H 'apikey: ${{ env.SUPABASE_ANON_KEY }}' \
+            -H 'Content-Type: application/json' \
+            -H 'Prefer: return=minimal' \
