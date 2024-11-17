@@ -34,11 +34,10 @@ jobs:
         run: |
           brew install node
           brew install rust
-          cargo install tauri-cli
 
       - name: Clone Pake
         run: |
-          git clone --branch V0.9.5 https://github.com/tw93/Pake.git
+          git clone --depth 1 --branch v2.0.0 https://github.com/tw93/Pake.git
           cd Pake
           npm install
 
@@ -63,27 +62,114 @@ jobs:
           serde_json = "1.0"
           serde = { version = "1.0", features = ["derive"] }
           tauri = { version = "1.2", features = ["api-all"] }
+          webbrowser = "0.8"
+          wry = "0.24"
 
           [features]
           default = ["custom-protocol"]
           custom-protocol = ["tauri/custom-protocol"]
           EOL
 
+      - name: Create tauri.conf.json
+        run: |
+          cd Pake/src-tauri
+          cat > tauri.conf.json << 'EOL'
+          {
+            "build": {
+              "beforeDevCommand": "",
+              "beforeBuildCommand": "",
+              "devPath": "../src",
+              "distDir": "../src"
+            },
+            "package": {
+              "productName": "${{ github.event.client_payload.name }}",
+              "version": "0.1.0"
+            },
+            "tauri": {
+              "allowlist": {
+                "all": true
+              },
+              "bundle": {
+                "active": true,
+                "category": "DeveloperTool",
+                "copyright": "",
+                "deb": {
+                  "depends": []
+                },
+                "icon": [
+                  "icons/32x32.png",
+                  "icons/128x128.png",
+                  "icons/128x128@2x.png",
+                  "icons/icon.icns",
+                  "icons/icon.ico"
+                ],
+                "identifier": "com.tauri.dev",
+                "longDescription": "",
+                "macOS": {
+                  "entitlements": null,
+                  "exceptionDomain": "",
+                  "frameworks": [],
+                  "providerShortName": null,
+                  "signingIdentity": null
+                },
+                "resources": [],
+                "shortDescription": "",
+                "targets": "all",
+                "windows": {
+                  "certificateThumbprint": null,
+                  "digestAlgorithm": "sha256",
+                  "timestampUrl": ""
+                }
+              },
+              "security": {
+                "csp": "default-src 'self' 'unsafe-eval' 'unsafe-inline' data: filesystem: ws: wss: http: https:"
+              },
+              "windows": [
+                {
+                  "fullscreen": false,
+                  "height": 800,
+                  "resizable": true,
+                  "title": "${{ github.event.client_payload.name }}",
+                  "width": 1280
+                }
+              ]
+            }
+          }
+          EOL
+
+      - name: Create Source Files
+        run: |
+          cd Pake/src-tauri/src
+          cat > main.rs << 'EOL'
+          #![cfg_attr(all(not(debug_assertions), target_os = "windows"), windows_subsystem = "windows")]
+
+          use tauri::{CustomMenuItem, Menu, MenuItem, Submenu};
+
+          fn main() {
+            let ctx = tauri::generate_context!();
+            tauri::Builder::default()
+              .menu(
+                Menu::new()
+                  .add_submenu(Submenu::new(
+                    "File",
+                    Menu::new().add_native_item(MenuItem::Quit),
+                  ))
+              )
+              .run(ctx)
+              .expect("error while running tauri application");
+          }
+          EOL
+
       - name: Build App
         run: |
           cd Pake/src-tauri
+          mkdir -p icons
           cargo build --release
 
       - name: Package App
         run: |
           cd Pake/src-tauri/target/release
           zip -r "../../../${{ github.event.client_payload.name }}-macos.zip" *.app || zip -r "../../../${{ github.event.client_payload.name }}-macos.zip" app
-
-      - name: Upload Artifact
-        uses: actions/upload-artifact@v3
-        with:
-          name: ${{ github.event.client_payload.name }}-macos
-          path: Pake/${{ github.event.client_payload.name }}-macos.zip
 
       - name: Create Release
         uses: softprops/action-gh-release@v1
@@ -96,8 +182,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Update Supabase Status
-        if: always()
         run: |
           curl -X PATCH "${{ env.SUPABASE_URL }}/rest/v1/pake_apps" \
-          -H "apikey: ${{ env.SUPABASE_ANON_KEY }}" \
-          -H "Content-Type: application/json" \
+            -H "apikey: ${{ env.SUPABASE_ANON_KEY }}" \
+            -H "Content-Type: application/json" \
