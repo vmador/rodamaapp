@@ -100,34 +100,29 @@ jobs:
           
           cat > tauri.conf.json << 'EOL'
           {
-            "tauri": {
-              "bundle": {
-                "active": true,
-                "targets": [
-                  "dmg",
-                  "app"
-                ],
-                "identifier": "com.tauri.${{ github.event.client_payload.name }}",
-                "icon": [
-                  "icons/icon.png"
-                ],
-                "resources": []
-              },
-              "windows": [
-                {
-                  "title": "${{ github.event.client_payload.name }}",
-                  "height": 800,
-                  "width": 1280,
-                  "resizable": true,
-                  "fullscreen": false,
-                  "url": "${{ github.event.client_payload.url }}"
-                }
-              ],
-              "security": {
-                "csp": "default-src * 'unsafe-inline' 'unsafe-eval' data: filesystem:"
-              },
-              "allowlist": {
-                "all": true
+            "identifier": "com.tauri.${{ github.event.client_payload.name }}",
+            "productName": "${{ github.event.client_payload.name }}",
+            "version": "0.1.0",
+            "distDir": "../src",
+            "windows": [
+              {
+                "title": "${{ github.event.client_payload.name }}",
+                "height": 800,
+                "width": 1280,
+                "resizable": true,
+                "fullscreen": false,
+                "url": "${{ github.event.client_payload.url }}"
+              }
+            ],
+            "security": {
+              "csp": "default-src * 'unsafe-inline' 'unsafe-eval' data: filesystem:"
+            },
+            "bundle": {
+              "active": true,
+              "targets": ["dmg", "app"],
+              "icon": ["icons/icon.png"],
+              "macOS": {
+                "minimumSystemVersion": "10.13"
               }
             }
           }
