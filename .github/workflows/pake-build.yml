@@ -105,26 +105,19 @@ jobs:
               "beforeDevCommand": ""
             },
             "identifier": "com.tauri.${{ github.event.client_payload.name }}",
-            "app": {
-              "withGlobalTauri": false,
-              "out": "dist",
-              "security": {
-                "csp": null
-              },
-              "windows": [
-                {
-                  "title": "${{ github.event.client_payload.name }}",
-                  "width": 1280,
-                  "height": 800,
-                  "resizable": true,
-                  "fullscreen": false
-                }
-              ]
-            },
+            "windows": [
+              {
+                "title": "${{ github.event.client_payload.name }}",
+                "width": 1280,
+                "height": 800,
+                "resizable": true,
+                "fullscreen": false
+              }
+            ],
             "bundle": {
               "active": true,
               "icon": ["icons/icon.png"],
-              "targets": "app"
+              "targets": ["app"]
             }
           }
           EOL
