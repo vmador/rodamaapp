@@ -100,15 +100,17 @@ jobs:
           
           cat > tauri.conf.json << 'EOL'
           {
-            "build": {
-              "beforeBuildCommand": "",
-              "beforeDevCommand": ""
-            },
-            "identifier": "com.tauri.${{ github.event.client_payload.name }}",
-            "bundle": {
-              "active": true,
-              "icon": ["icons/icon.png"],
-              "targets": ["app"]
+            "tauri": {
+              "build": {
+                "beforeBuildCommand": "",
+                "beforeDevCommand": ""
+              },
+              "identifier": "com.tauri.${{ github.event.client_payload.name }}",
+              "bundle": {
+                "active": true,
+                "icon": ["icons/icon.png"],
+                "targets": ["app"]
+              }
             }
           }
           EOL
