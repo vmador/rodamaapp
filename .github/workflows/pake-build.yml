@@ -119,11 +119,26 @@ jobs:
               },
               "bundle": {
                 "active": true,
-                "targets": ["dmg", "deb", "msi"],
-                "identifier": "com.tauri.build",
+                "category": "DeveloperTool",
+                "copyright": "",
+                "targets": ["dmg"],
+                "identifier": "com.tauri.${{ github.event.client_payload.name }}",
                 "icon": [
                   "icons/icon.png"
-                ]
+                ],
+                "resources": [],
+                "shortDescription": "",
+                "macOS": {
+                  "entitlements": null,
+                  "exceptionDomain": "",
+                  "frameworks": [],
+                  "providerShortName": null,
+                  "signingIdentity": null,
+                  "minimumSystemVersion": "10.13",
+                  "dmg": {
+                    "title": "${{ github.event.client_payload.name }}"
+                  }
+                }
               },
               "security": {
                 "csp": "default-src * 'unsafe-inline' 'unsafe-eval' data: filesystem:"
@@ -149,14 +164,20 @@ jobs:
 
       - name: Package App
         run: |
-          cd Pake/src-tauri/target/release
-          zip -r "../../../${{ github.event.client_payload.name }}-macos.zip" *.app || zip -r "../../../${{ github.event.client_payload.name }}-macos.zip" app
+          cd Pake/src-tauri/target/release/bundle
+          if [ -d "dmg" ]; then
+            zip -r "../../../../${{ github.event.client_payload.name }}-installer.zip" ./dmg/*.dmg
+          elif [ -d "macos" ]; then
+            zip -r "../../../../${{ github.event.client_payload.name }}-app.zip" ./macos/*.app
+          fi
 
       - name: Create Release
         uses: softprops/action-gh-release@v1
         if: success()
         with:
-          files: Pake/${{ github.event.client_payload.name }}-macos.zip
+          files: |
+            Pake/${{ github.event.client_payload.name }}-installer.zip
+            Pake/${{ github.event.client_payload.name }}-app.zip
           name: ${{ github.event.client_payload.name }}
           tag_name: release-${{ github.sha }}
         env:
