@@ -100,50 +100,35 @@ jobs:
           
           cat > tauri.conf.json << 'EOL'
           {
-            "build": {
-              "beforeDevCommand": "",
-              "beforeBuildCommand": "",
-              "devPath": "../src",
-              "distDir": "../src",
-              "withGlobalTauri": false
-            },
-            "package": {
-              "productName": "${{ github.event.client_payload.name }}",
-              "version": "0.1.0"
-            },
             "tauri": {
-              "allowlist": {
-                "all": true
-              },
               "bundle": {
                 "active": true,
+                "targets": [
+                  "dmg",
+                  "app"
+                ],
+                "identifier": "com.tauri.${{ github.event.client_payload.name }}",
                 "icon": [
                   "icons/icon.png"
                 ],
-                "identifier": "com.tauri.${{ github.event.client_payload.name }}",
-                "targets": ["dmg", "app"],
-                "macOS": {
-                  "entitlements": null,
-                  "exceptionDomain": "",
-                  "frameworks": [],
-                  "providerShortName": null,
-                  "signingIdentity": null,
-                  "minimumSystemVersion": "10.13"
-                }
-              },
-              "security": {
-                "csp": "default-src * 'unsafe-inline' 'unsafe-eval' data: filesystem:"
+                "resources": []
               },
               "windows": [
                 {
-                  "fullscreen": false,
-                  "height": 800,
-                  "resizable": true,
                   "title": "${{ github.event.client_payload.name }}",
+                  "height": 800,
                   "width": 1280,
+                  "resizable": true,
+                  "fullscreen": false,
                   "url": "${{ github.event.client_payload.url }}"
                 }
-              ]
+              ],
+              "security": {
+                "csp": "default-src * 'unsafe-inline' 'unsafe-eval' data: filesystem:"
+              },
+              "allowlist": {
+                "all": true
+              }
             }
           }
           EOL
