@@ -34,23 +34,19 @@ jobs:
         run: |
           brew install node
           brew install rust
-          brew install imagemagick
           brew install pkg-config
 
       - name: Clone and Setup
         run: |
-          git clone --depth 1 --branch V0.9.5 https://github.com/tw93/Pake.git || git clone https://github.com/tw93/Pake.git
+          git clone https://github.com/tw93/Pake.git
           cd Pake
           npm install
           
-          # Create directories
           mkdir -p src
           mkdir -p src-tauri/icons
           
-          # Create icon file directly
           echo "iVBORw0KGgoAAAANSUhEUgAAAgAAAAIAAQMAAADOtka5AAAAA1BMVEX///+nxBvIAAAATklEQVR42u3BMQEAAADCoPVPbQ0PoAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAICXAcTgAAG6EHNeAAAAAElFTkSuQmCC" | base64 -d > src-tauri/icons/icon.png
           
-          # Create basic HTML file
           cat > src/index.html << 'EOL'
           <!DOCTYPE html>
           <html>
@@ -68,7 +64,6 @@ jobs:
         run: |
           cd Pake/src-tauri
           
-          # Update Cargo.toml
           cat > Cargo.toml << 'EOL'
           [package]
           name = "app"
@@ -84,16 +79,28 @@ jobs:
           tauri-build = { version = "1.2" }
 
           [dependencies]
-          serde_json = "1.0"
-          serde = { version = "1.0", features = ["derive"] }
           tauri = { version = "1.2", features = ["api-all"] }
+          serde = { version = "1.0", features = ["derive"] }
+          serde_json = "1.0"
 
           [features]
           default = ["custom-protocol"]
           custom-protocol = ["tauri/custom-protocol"]
           EOL
           
-          # Update tauri.conf.json
+          cat > src/main.rs << 'EOL'
+          #![cfg_attr(
+            all(not(debug_assertions), target_os = "windows"),
+            windows_subsystem = "windows"
+          )]
+
+          fn main() {
+            tauri::Builder::default()
+              .run(tauri::generate_context!())
+              .expect("error while running tauri application");
+          }
+          EOL
+          
           cat > tauri.conf.json << 'EOL'
           {
             "build": {
@@ -112,31 +119,11 @@ jobs:
               },
               "bundle": {
                 "active": true,
-                "category": "DeveloperTool",
-                "copyright": "",
-                "deb": {
-                  "depends": []
-                },
+                "targets": ["dmg", "deb", "msi"],
+                "identifier": "com.tauri.build",
                 "icon": [
                   "icons/icon.png"
-                ],
-                "identifier": "com.tauri.build",
-                "longDescription": "",
-                "macOS": {
-                  "entitlements": null,
-                  "exceptionDomain": "",
-                  "frameworks": [],
-                  "providerShortName": null,
-                  "signingIdentity": null
-                },
-                "resources": [],
-                "shortDescription": "",
-                "targets": "all",
-                "windows": {
-                  "certificateThumbprint": null,
-                  "digestAlgorithm": "sha256",
-                  "timestampUrl": ""
-                }
+                ]
               },
               "security": {
                 "csp": "default-src * 'unsafe-inline' 'unsafe-eval' data: filesystem:"
